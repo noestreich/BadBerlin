@@ -225,11 +225,12 @@ final class BadViewController: NSViewController {
 
     // Extended section
     private var isExpanded = false
-    private var toggleBtn:               NSButton!
-    private var expandedContainer:       NSView!
-    private var expandedHeightConstraint: NSLayoutConstraint!  // active = collapsed (height 0)
-    private var expandedContentConstraint: NSLayoutConstraint! // active = expanded  (last row → bottom)
-    private var compactRows:             [CompactRow] = []
+    private var toggleBtn:                NSButton!
+    private var expandedContainer:        NSView!
+    private var expandedHeightConstraint:  NSLayoutConstraint!
+    private var expandedContentConstraint: NSLayoutConstraint!
+    private var compactRows:              [CompactRow] = []
+    private var compactPopoverSize:       NSSize = .zero
 
     // Footer
     private let updatedField = NSTextField(labelWithString: "")
@@ -414,22 +415,32 @@ final class BadViewController: NSViewController {
     @objc private func onRefresh() { appDelegate?.fetchAll() }
     @objc private func onQuit()    { NSApp.terminate(nil) }
 
+    // Capture the compact popover size the first time it is shown.
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        if compactPopoverSize == .zero, let popover = appDelegate?.popover {
+            compactPopoverSize = popover.contentSize
+        }
+    }
+
     @objc private func onToggle() {
         isExpanded.toggle()
         toggleBtn.title = isExpanded ? "▼  Weitere Daten" : "▶  Weitere Daten"
-        // Swap the two mutually-exclusive constraints, then force layout so
-        // fittingSize reflects the new state before we resize the popover.
         expandedHeightConstraint.isActive  = !isExpanded
         expandedContentConstraint.isActive =  isExpanded
-        view.layoutSubtreeIfNeeded()
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.20
-            ctx.allowsImplicitAnimation = true
-            self.preferredContentSize = self.view.fittingSize
-            self.view.layoutSubtreeIfNeeded()
-        } completionHandler: {
-            self.preferredContentSize = self.view.fittingSize
+        expandedContainer.layoutSubtreeIfNeeded()
+
+        let target: NSSize
+        if isExpanded {
+            // expandedContainer is not pinned to the popover, so fittingSize is accurate.
+            let addedHeight = expandedContainer.fittingSize.height
+            target = NSSize(width: compactPopoverSize.width,
+                            height: compactPopoverSize.height + addedHeight)
+        } else {
+            target = compactPopoverSize
         }
+        preferredContentSize = target
+        appDelegate?.popover.contentSize = target
     }
 
     // MARK: Update
