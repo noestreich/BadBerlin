@@ -333,9 +333,11 @@ final class BadViewController: NSViewController {
                 sep.layer?.backgroundColor = NSColor(white: 0.85, alpha: 1).cgColor
                 sep.translatesAutoresizingMaskIntoConstraints = false
                 sep.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+                sep.widthAnchor.constraint(equalTo: rowStack.widthAnchor).isActive = true
                 rowStack.addArrangedSubview(sep)
             }
             let row = CompactRow(title: sensor.title, unit: sensor.unit)
+            row.widthAnchor.constraint(equalTo: rowStack.widthAnchor).isActive = true
             compactRows.append(row)
             rowStack.addArrangedSubview(row)
         }
