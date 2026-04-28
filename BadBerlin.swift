@@ -19,14 +19,16 @@ struct BadData {
 
 // Sensors shown in the expandable section (sourceid, display-title, unit)
 let extendedSensors: [(id: Int, title: String, unit: String)] = [
-    (22, "Fließzeit",        "h"),
-    (10, "pH",               ""),
-    ( 5, "Leitfähigkeit",    "µS/cm"),
-    ( 8, "Gel. Sauerstoff",  "mg/L"),
-    (15, "Sensor 15",        "mg/L"),
-    (16, "Trübung",          "NTU"),
-    (17, "Sensor 17",        "–"),
-    (19, "Sensor 19",        "–"),
+    ( 5, "Leitfähigkeit",     "µS/cm"),
+    (10, "pH-Wert",           ""),
+    (15, "TOC Equivalent",    "mg/L"),
+    ( 8, "DOC Equivalent",    "mg/L"),
+    (31, "UV254T",            ""),
+    (16, "TSS Equivalent",    "mg/L"),
+    (17, "Turbidity",         "FTUeq"),
+    (19, "Chlorophyll-A",     "µg/L"),
+    (22, "Ammonium NH₄-N",   "mg/L"),
+    (23, "Nitrat-N",          "mg/L"),
 ]
 
 // MARK: - Helpers
@@ -460,6 +462,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.title = "🏊 …"
         statusItem.button?.action = #selector(togglePopover(_:))
         statusItem.button?.target = self
+        _ = contentVC.view  // force loadView() so compactRows exist before first fetch
         fetchAll()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
             self?.fetchAll()
