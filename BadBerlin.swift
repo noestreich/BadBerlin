@@ -318,27 +318,41 @@ final class BadViewController: NSViewController {
         expandedContainer.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(expandedContainer)
 
-        // Vertical stack of compact rows inside the container
-        let rowStack = NSStackView()
-        rowStack.orientation = .vertical
-        rowStack.spacing = 0
-        rowStack.translatesAutoresizingMaskIntoConstraints = false
-        expandedContainer.addSubview(rowStack)
+        // Build rows manually with explicit leading/trailing constraints
+        // so every row spans the full container width regardless of content size
+        var prevAnchor: NSLayoutYAxisAnchor = expandedContainer.topAnchor
+        var prevConstant: CGFloat = 6
 
         for sensor in extendedSensors {
-            // Thin separator above every row except the first
             if !compactRows.isEmpty {
                 let sep = NSView()
                 sep.wantsLayer = true
                 sep.layer?.backgroundColor = NSColor(white: 0.85, alpha: 1).cgColor
                 sep.translatesAutoresizingMaskIntoConstraints = false
-                sep.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
-                rowStack.addArrangedSubview(sep)
+                expandedContainer.addSubview(sep)
+                NSLayoutConstraint.activate([
+                    sep.topAnchor.constraint(equalTo: prevAnchor, constant: prevConstant),
+                    sep.leadingAnchor.constraint(equalTo: expandedContainer.leadingAnchor, constant: 14),
+                    sep.trailingAnchor.constraint(equalTo: expandedContainer.trailingAnchor, constant: -14),
+                    sep.heightAnchor.constraint(equalToConstant: 0.5),
+                ])
+                prevAnchor = sep.bottomAnchor
+                prevConstant = 0
             }
             let row = CompactRow(title: sensor.title, unit: sensor.unit)
+            row.translatesAutoresizingMaskIntoConstraints = false
+            expandedContainer.addSubview(row)
+            NSLayoutConstraint.activate([
+                row.topAnchor.constraint(equalTo: prevAnchor, constant: prevConstant),
+                row.leadingAnchor.constraint(equalTo: expandedContainer.leadingAnchor, constant: 14),
+                row.trailingAnchor.constraint(equalTo: expandedContainer.trailingAnchor, constant: -14),
+            ])
+            prevAnchor = row.bottomAnchor
+            prevConstant = 0
             compactRows.append(row)
-            rowStack.addArrangedSubview(row)
         }
+        // Pin last row to container bottom
+        prevAnchor.constraint(equalTo: expandedContainer.bottomAnchor, constant: -6).isActive = true
 
         // Height constraint = 0 when collapsed
         expandedHeightConstraint = expandedContainer.heightAnchor.constraint(equalToConstant: 0)
@@ -352,11 +366,6 @@ final class BadViewController: NSViewController {
             expandedContainer.topAnchor.constraint(equalTo: btn.bottomAnchor, constant: 0),
             expandedContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             expandedContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-
-            rowStack.topAnchor.constraint(equalTo: expandedContainer.topAnchor, constant: 6),
-            rowStack.leadingAnchor.constraint(equalTo: expandedContainer.leadingAnchor, constant: 14),
-            rowStack.trailingAnchor.constraint(equalTo: expandedContainer.trailingAnchor, constant: -14),
-            rowStack.bottomAnchor.constraint(equalTo: expandedContainer.bottomAnchor, constant: -6),
         ])
 
         expandableBottom = expandedContainer.bottomAnchor
@@ -405,18 +414,18 @@ final class BadViewController: NSViewController {
     @objc private func onToggle() {
         isExpanded.toggle()
         toggleBtn.title = isExpanded ? "▼  Weitere Daten" : "▶  Weitere Daten"
-
+        // Apply constraint change and force layout before reading fittingSize,
+        // so the popover animates to the correct target height in both directions.
+        expandedHeightConstraint.isActive = !isExpanded
+        view.layoutSubtreeIfNeeded()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.20
             ctx.allowsImplicitAnimation = true
-            self.expandedHeightConstraint.isActive = !self.isExpanded
+            self.preferredContentSize = self.view.fittingSize
             self.view.layoutSubtreeIfNeeded()
         } completionHandler: {
-            // Update popover size after animation
             self.preferredContentSize = self.view.fittingSize
         }
-        // Update immediately so popover starts resizing with animation
-        preferredContentSize = view.fittingSize
     }
 
     // MARK: Update
