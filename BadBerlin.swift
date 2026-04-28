@@ -167,8 +167,15 @@ final class MetricCard: NSView {
 
 final class BadViewController: NSViewController {
 
-    // Header: ColorView statt NSView, damit draw(_:) die Pastellfarbe sicher zeichnet
-    private let headerBg      = ColorView()
+    // Header: NSBox (boxType .custom) ist der AppKit-Standard für zuverlässige Hintergrundfarben
+    private let headerBg: NSBox = {
+        let b = NSBox()
+        b.boxType     = .custom
+        b.borderWidth = 0
+        b.cornerRadius = 0
+        b.fillColor   = NSColor(white: 0.88, alpha: 1)
+        return b
+    }()
     private let locationField = NSTextField(labelWithString: "SPREEKANAL · BAD BERLIN")
     private let qualityField  = NSTextField(labelWithString: "🏊 …")
     private let ecoliField    = NSTextField(labelWithString: "")
@@ -201,7 +208,6 @@ final class BadViewController: NSViewController {
     // MARK: Build
 
     private func buildHeader() {
-        headerBg.fillColor = colorForQuality("–")
         headerBg.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(headerBg)
 
@@ -321,7 +327,7 @@ final class BadViewController: NSViewController {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            // ColorView.fillColor → needsDisplay = true → draw(_:) zuverlässig aufgerufen
+            // NSBox.fillColor wird direkt gerendert, kein Compositing-Problem
             self.headerBg.fillColor = colorForQuality(d.quality)
 
             self.qualityField.stringValue = "\(menuBarEmoji(d.quality))  \(d.quality.uppercased())"
