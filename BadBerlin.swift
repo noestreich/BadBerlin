@@ -173,17 +173,21 @@ final class CompactRow: NSView {
             f.translatesAutoresizingMaskIntoConstraints = false; addSubview(f)
         }
         NSLayoutConstraint.activate([
+            // Fixed right column (value + date), always flush to the right edge
+            valueField.topAnchor.constraint(equalTo: topAnchor, constant: 4),
+            valueField.trailingAnchor.constraint(equalTo: trailingAnchor),
+            valueField.widthAnchor.constraint(equalToConstant: 80),
+            dateField.topAnchor.constraint(equalTo: valueField.bottomAnchor, constant: 1),
+            dateField.trailingAnchor.constraint(equalTo: trailingAnchor),
+            dateField.widthAnchor.constraint(equalToConstant: 80),
+            // Left column fills remaining space
             titleField.topAnchor.constraint(equalTo: topAnchor, constant: 6),
             titleField.leadingAnchor.constraint(equalTo: leadingAnchor),
             titleField.trailingAnchor.constraint(equalTo: valueField.leadingAnchor, constant: -8),
-            valueField.topAnchor.constraint(equalTo: topAnchor, constant: 4),
-            valueField.trailingAnchor.constraint(equalTo: trailingAnchor),
-            valueField.widthAnchor.constraint(greaterThanOrEqualToConstant: 60),
             unitField.topAnchor.constraint(equalTo: titleField.bottomAnchor, constant: 1),
             unitField.leadingAnchor.constraint(equalTo: leadingAnchor),
+            unitField.trailingAnchor.constraint(equalTo: valueField.leadingAnchor, constant: -8),
             unitField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
-            dateField.topAnchor.constraint(equalTo: valueField.bottomAnchor, constant: 1),
-            dateField.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
     }
     required init?(coder: NSCoder) { fatalError() }
