@@ -225,10 +225,11 @@ final class BadViewController: NSViewController {
 
     // Extended section
     private var isExpanded = false
-    private var toggleBtn:             NSButton!
-    private var expandedContainer:     NSView!
-    private var expandedHeightConstraint: NSLayoutConstraint!
-    private var compactRows:           [CompactRow] = []
+    private var toggleBtn:               NSButton!
+    private var expandedContainer:       NSView!
+    private var expandedHeightConstraint: NSLayoutConstraint!  // active = collapsed (height 0)
+    private var expandedContentConstraint: NSLayoutConstraint! // active = expanded  (last row → bottom)
+    private var compactRows:             [CompactRow] = []
 
     // Footer
     private let updatedField = NSTextField(labelWithString: "")
@@ -351,10 +352,12 @@ final class BadViewController: NSViewController {
             prevConstant = 0
             compactRows.append(row)
         }
-        // Pin last row to container bottom
-        prevAnchor.constraint(equalTo: expandedContainer.bottomAnchor, constant: -6).isActive = true
+        // These two constraints are mutually exclusive — only one active at a time:
+        // collapsed: height=0 active, content-bottom inactive
+        // expanded:  height=0 inactive, content-bottom active
+        expandedContentConstraint = prevAnchor.constraint(equalTo: expandedContainer.bottomAnchor, constant: -6)
+        expandedContentConstraint.isActive = false
 
-        // Height constraint = 0 when collapsed
         expandedHeightConstraint = expandedContainer.heightAnchor.constraint(equalToConstant: 0)
         expandedHeightConstraint.isActive = true
 
@@ -414,9 +417,10 @@ final class BadViewController: NSViewController {
     @objc private func onToggle() {
         isExpanded.toggle()
         toggleBtn.title = isExpanded ? "▼  Weitere Daten" : "▶  Weitere Daten"
-        // Apply constraint change and force layout before reading fittingSize,
-        // so the popover animates to the correct target height in both directions.
-        expandedHeightConstraint.isActive = !isExpanded
+        // Swap the two mutually-exclusive constraints, then force layout so
+        // fittingSize reflects the new state before we resize the popover.
+        expandedHeightConstraint.isActive  = !isExpanded
+        expandedContentConstraint.isActive =  isExpanded
         view.layoutSubtreeIfNeeded()
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.20
